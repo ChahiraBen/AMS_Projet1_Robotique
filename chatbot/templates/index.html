@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assistant Pepper – Accueil Hospitalier</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <img src="/static/img/pepper_icon.svg" alt="Pepper" class="pepper-icon" onerror="this.style.display='none'" />
+      <div>
+        <h1>Assistant d'accueil</h1>
+        <p class="subtitle">Hôpital Central d'Avignon</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="chat-container">
+      <div id="messages">
+        <div class="message bot">
+          <div class="bubble">Bonjour, comment puis-je vous aider ?</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="info-card" class="hidden">
+      <h2 id="card-title"></h2>
+      <div id="card-body"></div>
+    </div>
+  </main>
+
+  <footer>
+    <form id="chat-form" autocomplete="off">
+      <input
+        id="user-input"
+        type="text"
+        placeholder="Posez votre question…"
+        autofocus
+        maxlength="300"
+      />
+      <button type="submit" id="send-btn">Envoyer</button>
+    </form>
+    <div id="quick-buttons">
+      <button class="quick-btn" data-msg="Où se trouve la cardiologie ?">Cardiologie</button>
+      <button class="quick-btn" data-msg="Je cherche le docteur Martin">Dr. Martin</button>
+      <button class="quick-btn" data-msg="Où sont les urgences ?">Urgences</button>
+      <button class="quick-btn" data-msg="Pharmacie la plus proche ?">Pharmacie</button>
+      <button class="quick-btn" data-msg="Quels sont les horaires de la radiologie ?">Horaires</button>
+    </div>
+  </footer>
+
+  <script src="/static/js/chat.js"></script>
+</body>
+</html>

@@ -11,15 +11,15 @@ Intent possible:
 - inconnu
 
 Format strict:
-{
+{{
   "intent": "...",
-  "entities": {
+  "entities": {{
     "nom_service": null,
     "nom_medecin": null,
     "nom_hopital": null,
     "nom_pharmacie": null
-  }
-}
+  }}
+}}
 Texte: {text}
 Historique: {history}
 """

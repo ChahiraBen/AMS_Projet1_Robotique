@@ -49,7 +49,7 @@ class DialogService:
         data = hospital_result.get("data")
 
         # Génération réponse finale
-        bot_text = self.responder.generate(message, history, data)
+        bot_text = self.responder.generate(message, history, data, intent)
         append_history(session, message, bot_text)
         set_context(
             session,
