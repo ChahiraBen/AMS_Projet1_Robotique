@@ -23,6 +23,8 @@ _PATTERNS = [
     (r"\b(au revoir|goodbye|bye|merci|bonne journée)\b", "au_revoir", {}),
     # pharmacie
     (r"\b(pharmacie)\b", "information_pharmacie", {}),
+    # prise de rendez-vous
+    (r"\b(rendez-vous|rdv|prendre|réserver|réservation|consulter|consultation|voir un)\b", "prise_rdv", {}),
     # liste services (avant localisation_service)
     (r"listes?\s+(des?\s+)?servi|quels\s+(sont\s+)?(les\s+)?servi|(servi).*(disponible|liste)", "liste_services", {}),
     # liste médecins (avant localisation_medecin)

@@ -10,6 +10,7 @@ Intent = Literal[
     "information_pharmacie",
     "liste_services",
     "liste_medecins",
+    "prise_rdv",
     "inconnu",
 ]
 
@@ -44,6 +45,7 @@ def normalize_nlu_result(payload: Any) -> Dict[str, Any]:
         "information_pharmacie",
         "liste_services",
         "liste_medecins",
+        "prise_rdv",
         "inconnu",
     }
     if intent not in allowed_intents:

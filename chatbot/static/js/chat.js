@@ -1,3 +1,50 @@
+// ── Gestion de session ──────────────────────────────────────────────────────
+var INACTIVITY_SECONDS = 60;
+var inactivityTimer = null;
+var countdownTimer  = null;
+var secondsLeft     = INACTIVITY_SECONDS;
+var sessionTimerEl  = document.getElementById("session-timer");
+
+function resetInactivityTimer() {
+  secondsLeft = INACTIVITY_SECONDS;
+  clearTimeout(inactivityTimer);
+  clearInterval(countdownTimer);
+  sessionTimerEl.textContent = "";
+
+  countdownTimer = setInterval(function() {
+    secondsLeft--;
+    if (secondsLeft <= 15) {
+      sessionTimerEl.textContent = "Session expire dans " + secondsLeft + "s";
+    }
+    if (secondsLeft <= 0) {
+      clearInterval(countdownTimer);
+      resetSession();
+    }
+  }, 1000);
+}
+
+function resetSession() {
+  clearTimeout(inactivityTimer);
+  clearInterval(countdownTimer);
+  sessionTimerEl.textContent = "";
+
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "/reset", true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    messages.innerHTML = '<div class="message bot"><div class="bubble">Bonjour, comment puis-je vous aider ?</div></div>';
+    hideCard();
+    input.value = "";
+    input.focus();
+    resetInactivityTimer();
+  };
+  xhr.send();
+}
+
+// Démarrer le timer dès le chargement
+resetInactivityTimer();
+
+// ── Chat ────────────────────────────────────────────────────────────────────
 var form      = document.getElementById("chat-form");
 var input     = document.getElementById("user-input");
 var messages  = document.getElementById("messages");
@@ -22,6 +69,7 @@ form.addEventListener("submit", function(e) {
   var text = input.value.trim();
   if (!text) return;
 
+  resetInactivityTimer();
   addMessage(text, "user");
   input.value = "";
   sendBtn.disabled = true;

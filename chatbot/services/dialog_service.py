@@ -2,16 +2,24 @@ from utils.session_store import get_history, append_history, get_context, set_co
 from services.nlu_service import NLUService
 from services.hospital_service import HospitalService
 from services.response_service import ResponseService
+from services.rdv_service import RDVService
 
 class DialogService:
     def __init__(self):
         self.nlu = NLUService()
         self.hospital = HospitalService()
         self.responder = ResponseService()
+        self.rdv = RDVService()
 
     def handle_message(self, message, session):
         history = get_history(session)
         context = get_context(session)
+
+        # Si une prise de RDV est en cours, continuer ce dialogue en priorité
+        if session.get("rdv"):
+            result = self.rdv.handle(message, session)
+            append_history(session, message, result["response"])
+            return result
 
         nlu = self.nlu.extract(message, history)
         intent = nlu.get("intent", "inconnu")
@@ -26,6 +34,12 @@ class DialogService:
         # Cas spécifique : "et à quel étage ?" après une demande de localisation de service.
         if intent == "inconnu" and entities.get("nom_service"):
             intent = "localisation_service"
+
+        # Prise de RDV
+        if intent == "prise_rdv":
+            result = self.rdv.handle(message, session)
+            append_history(session, message, result["response"])
+            return result
 
         # logique hôpital
         hospital_result = self.hospital.handle(intent, entities)

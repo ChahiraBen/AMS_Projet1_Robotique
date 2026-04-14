@@ -11,6 +11,7 @@ Intents possibles:
 - localisation_medecin : cherche un médecin précis par son nom
 - liste_services : demande la liste de TOUS les services (ex: "liste des services", "quels services", "services disponibles") — même avec des fautes de frappe
 - liste_medecins : demande la liste de TOUS les médecins (ex: "liste des médecins", "médecins disponibles") — même avec des fautes de frappe
+- prise_rdv : veut prendre un rendez-vous (ex: "je veux voir un cardiologue", "prendre un rdv", "consulter un médecin")
 - information_pharmacie : cherche une pharmacie
 - inconnu : autre
 

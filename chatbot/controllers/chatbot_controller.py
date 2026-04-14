@@ -21,6 +21,12 @@ def chatbot():
     return jsonify(result)
 
 
+@bp.route("/reset", methods=["POST"])
+def reset():
+    session.clear()
+    return jsonify({"status": "ok"})
+
+
 @bp.route("/transcribe", methods=["POST"])
 def transcribe():
     """Reçoit un fichier audio WAV de Pepper et retourne le texte transcrit."""

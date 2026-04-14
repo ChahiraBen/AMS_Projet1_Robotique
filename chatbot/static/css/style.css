@@ -135,6 +135,29 @@ footer {
   flex-shrink: 0;
   box-shadow: 0 -2px 6px rgba(0,0,0,.05);
 }
+#session-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+#session-timer {
+  font-size: .8rem;
+  color: #e74c3c;
+  font-weight: 600;
+}
+#reset-btn {
+  background: none;
+  border: 1.5px solid #ccc;
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: .8rem;
+  color: var(--gray-text);
+  cursor: pointer;
+}
+#reset-btn:hover { border-color: #e74c3c; color: #e74c3c; }
+
 #chat-form { display: flex; gap: 8px; margin-bottom: 6px; }
 #user-input {
   flex: 1;
