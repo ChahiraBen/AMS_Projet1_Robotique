@@ -1,14 +1,20 @@
 NLU_PROMPT = """
-Tu es un modèle de NLU. Analyse le texte utilisateur et retourne UNIQUEMENT un JSON valide.
-Intent possible:
-- localisation_medecin
-- localisation_service
-- horaires_service
-- contact_service
-- information_pharmacie
-- salutation
-- au_revoir
-- inconnu
+Tu es un modèle de NLU pour un assistant hospitalier. Analyse UNIQUEMENT le texte utilisateur ci-dessous et retourne UNIQUEMENT un JSON valide.
+N'utilise PAS l'historique pour déduire les entités — extrait uniquement ce qui est explicitement dans le texte actuel.
+
+Intents possibles:
+- salutation : bonjour, bonsoir, etc.
+- au_revoir : au revoir, merci, bye
+- localisation_service : où se trouve un service précis (cardiologie, urgences, etc.)
+- horaires_service : horaires d'ouverture d'un service précis
+- contact_service : téléphone ou contact d'un service
+- localisation_medecin : cherche un médecin précis par son nom
+- liste_services : demande la liste de TOUS les services (ex: "liste des services", "quels services", "services disponibles") — même avec des fautes de frappe
+- liste_medecins : demande la liste de TOUS les médecins (ex: "liste des médecins", "médecins disponibles") — même avec des fautes de frappe
+- information_pharmacie : cherche une pharmacie
+- inconnu : autre
+
+Règle importante : si l'utilisateur demande une liste générale sans préciser de nom, utilise liste_services ou liste_medecins.
 
 Format strict:
 {{
@@ -21,7 +27,6 @@ Format strict:
   }}
 }}
 Texte: {text}
-Historique: {history}
 """
 
 ANSWER_PROMPT = """

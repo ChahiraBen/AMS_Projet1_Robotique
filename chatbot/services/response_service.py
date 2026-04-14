@@ -64,6 +64,19 @@ def _format_fallback(data: list, intent: str) -> str:
             line = f"{nom} ({dst} km) — {adr}. Horaires : {hor}"
             parts.append(line + ".")
 
+        elif intent == "liste_services":
+            svc = row.get("nom_service", "")
+            loc = row.get("localisation", "")
+            parts.append(f"{svc} — {loc}")
+
+        elif intent == "liste_medecins":
+            nom  = row.get("nom_medecin", "")
+            spec = row.get("specialite", "")
+            line = nom
+            if spec:
+                line += f" ({spec})"
+            parts.append(line)
+
         else:
             # Réponse générique
             vals = [str(v) for v in row.values() if v]

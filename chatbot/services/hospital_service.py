@@ -52,6 +52,18 @@ class HospitalService:
                 return {"need_clarification": False, "text": "Je ne dispose pas de cette information.", "data": None}
             return {"need_clarification": False, "data": rows, "text": None}
 
+        if intent == "liste_services":
+            rows = self.repo.find_all_services()
+            if not rows:
+                return {"need_clarification": False, "text": "Je ne dispose pas de cette information.", "data": None}
+            return {"need_clarification": False, "data": rows, "text": None}
+
+        if intent == "liste_medecins":
+            rows = self.repo.find_all_doctors()
+            if not rows:
+                return {"need_clarification": False, "text": "Je ne dispose pas de cette information.", "data": None}
+            return {"need_clarification": False, "data": rows, "text": None}
+
         if intent == "information_pharmacie":
             rows = self.repo.find_nearest_pharmacies()
             if not rows:

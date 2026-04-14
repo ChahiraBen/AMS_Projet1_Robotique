@@ -23,10 +23,14 @@ _PATTERNS = [
     (r"\b(au revoir|goodbye|bye|merci|bonne journée)\b", "au_revoir", {}),
     # pharmacie
     (r"\b(pharmacie)\b", "information_pharmacie", {}),
+    # liste services (avant localisation_service)
+    (r"listes?\s+(des?\s+)?servi|quels\s+(sont\s+)?(les\s+)?servi|(servi).*(disponible|liste)", "liste_services", {}),
+    # liste médecins (avant localisation_medecin)
+    (r"listes?\s+(des?\s+)?m[eé]decin|quels\s+(sont\s+)?(les\s+)?m[eé]decin|(m[eé]decin).*(disponible|liste|hopital|h[oô]pital)", "liste_medecins", {}),
     # contact
     (r"\b(téléphone|tel|contact|numéro|appeler)\b", "contact_service", {}),
     # horaires
-    (r"\b(horaire|heure|ouvert|ferme|ouverture|fermeture)\b", "horaires_service", {}),
+    (r"\b(horaires?|heure|ouvert|ferme|ouverture|fermeture)\b", "horaires_service", {}),
     # médecin
     (r"\b(docteur|dr\.?|médecin|medecin|chirurgien|spécialiste)\b", "localisation_medecin", {}),
     # localisation service (doit être en dernier pour ne pas écraser médecin)
@@ -44,10 +48,10 @@ def _extract_service(text: str):
 
 
 def _extract_doctor(text: str):
-    # "docteur X", "Dr. X", "Dr X"
+    # "docteur X", "Dr. X", "Dr X" — retourne juste le nom sans "Dr."
     m = re.search(r"\b(?:docteur|dr\.?)\s+([a-zA-ZÀ-ÿ\-]+)", text, re.IGNORECASE)
     if m:
-        return "Dr. " + m.group(1).capitalize()
+        return m.group(1).capitalize()
     return None
 
 
@@ -100,8 +104,8 @@ class NLUService:
 
         return normalize_nlu_result(_fallback_nlu(text))
 
-    def _extract_gemini(self, text: str, history) -> dict:
-        prompt = NLU_PROMPT.format(text=text, history=history)
+    def _extract_gemini(self, text: str, history=None) -> dict:
+        prompt = NLU_PROMPT.format(text=text)
         try:
             resp = self.client.models.generate_content(
                 model=Config.GEMINI_MODEL,
