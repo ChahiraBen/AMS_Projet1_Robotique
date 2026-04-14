@@ -132,6 +132,16 @@ function addTyping() {
   return div;
 }
 
+var SERVICE_PLANS = {
+  "urgences":   "/static/img/plans/plan_urgences.svg",
+  "radiologie": "/static/img/plans/plan_radiologie.svg",
+  "cardiologie":"/static/img/plans/plan_cardiologie.svg",
+  "pédiatrie":  "/static/img/plans/plan_pediatrie.svg",
+  "pediatrie":  "/static/img/plans/plan_pediatrie.svg",
+  "maternité":  "/static/img/plans/plan_maternite.svg",
+  "maternite":  "/static/img/plans/plan_maternite.svg"
+};
+
 function showCard(intent, rows) {
   infoCard.className = infoCard.className.replace(" hidden", "").replace("hidden", "");
   cardBody.innerHTML = "";
@@ -157,6 +167,25 @@ function showCard(intent, rows) {
       if (row.horaire)      entry.appendChild(makeRow("Horaires",     row.horaire));
       if (row.num_tel)      entry.appendChild(makeRow("Telephone",    row.num_tel));
       if (row.adresse)      entry.appendChild(makeRow("Adresse",      row.adresse));
+
+      // Plan visuel
+      if (intent === "localisation_service" && row.nom_service) {
+        var key = row.nom_service.toLowerCase()
+          .replace("é","e").replace("è","e").replace("ê","e")
+          .replace("â","a").replace("î","i");
+        var planUrl = SERVICE_PLANS[key];
+        if (planUrl) {
+          var planDiv = document.createElement("div");
+          planDiv.style.marginTop = "10px";
+          var img = document.createElement("img");
+          img.src = planUrl;
+          img.style.width = "100%";
+          img.style.borderRadius = "8px";
+          img.style.border = "1px solid #e0e0e0";
+          planDiv.appendChild(img);
+          entry.appendChild(planDiv);
+        }
+      }
     } else if (intent === "localisation_medecin") {
       entry.appendChild(makeRow("Medecin",    row.nom_medecin));
       if (row.specialite)   entry.appendChild(makeRow("Specialite",  row.specialite));

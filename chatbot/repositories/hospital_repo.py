@@ -4,6 +4,7 @@ class HospitalRepository:
     def find_service_location(self, service_name):
         sql = """
         SELECT s.nom_service,
+               s.etage,
                CASE WHEN s.etage = 0 THEN 'Rez-de-chaussee'
                     ELSE 'Etage ' || s.etage END AS localisation,
                NULL AS nom_hopital
