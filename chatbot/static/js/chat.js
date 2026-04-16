@@ -222,3 +222,27 @@ function hideCard() {
     infoCard.className += " hidden";
   }
 }
+
+// ── Polling des messages STT (Pepper parle à voix haute) ────────────────────
+function pollUpdates() {
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", "/updates", true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4 || xhr.status !== 200) return;
+    try {
+      var data = JSON.parse(xhr.responseText);
+      var msgs = data.messages || [];
+      for (var i = 0; i < msgs.length; i++) {
+        addMessage(msgs[i].text, msgs[i].role);
+        resetInactivityTimer();
+      }
+      if (msgs.length > 0) {
+        hideCard(); // masquer l'ancienne carte si nouveaux messages
+      }
+    } catch (e) {}
+  };
+  xhr.send();
+}
+
+// Démarrer le polling toutes les 1.5 secondes
+setInterval(pollUpdates, 1500);
