@@ -17,8 +17,11 @@ class HospitalRepository:
         sql = """
         SELECT (m.prenom || ' ' || m.nom) AS nom_medecin,
                m.specialite,
-               s.nom_service              AS localisation,
+               s.nom_service              AS service,
+               CASE WHEN s.etage = 0 THEN 'rez-de-chaussee'
+                    ELSE 'etage ' || s.etage END AS localisation,
                m.horraire                 AS horaire,
+               m.telephone                AS num_tel,
                NULL                       AS nom_hopital
         FROM Medecin m
         LEFT JOIN Service s ON m.id_service = s.id_service

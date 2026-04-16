@@ -34,13 +34,16 @@ def _format_fallback(data: list, intent: str) -> str:
         elif intent == "localisation_medecin":
             nom  = row.get("nom_medecin", "")
             spec = row.get("specialite", "")
+            svc  = row.get("service", "")
             loc  = row.get("localisation", "")
             hor  = row.get("horaire", "")
-            line = f"{nom}"
+            line = f"Le docteur {nom}"
             if spec:
-                line += f", spécialiste en {spec}"
+                line += f" est {spec}"
+            if svc:
+                line += f" au service {svc}"
             if loc:
-                line += f", se trouve au {loc}"
+                line += f" ({loc})"
             if hor:
                 line += f". Consultations : {hor}"
             parts.append(line + ".")
