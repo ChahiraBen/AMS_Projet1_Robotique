@@ -1,5 +1,5 @@
 // ── Gestion de session ──────────────────────────────────────────────────────
-var INACTIVITY_SECONDS = 120;
+var INACTIVITY_SECONDS = 60;
 var inactivityTimer = null;
 var countdownTimer  = null;
 var secondsLeft     = INACTIVITY_SECONDS;
@@ -189,11 +189,9 @@ function showCard(intent, rows) {
     } else if (intent === "localisation_medecin") {
       entry.appendChild(makeRow("Medecin",    row.nom_medecin));
       if (row.specialite)   entry.appendChild(makeRow("Specialite",  row.specialite));
-      if (row.service)      entry.appendChild(makeRow("Service",     row.service));
-      if (row.localisation) entry.appendChild(makeRow("Etage",       row.localisation));
       if (row.nom_hopital)  entry.appendChild(makeRow("Hopital",     row.nom_hopital));
+      if (row.localisation) entry.appendChild(makeRow("Bureau",      row.localisation));
       if (row.horaire)      entry.appendChild(makeRow("Horaires",    row.horaire));
-      if (row.num_tel)      entry.appendChild(makeRow("Telephone",   row.num_tel));
     } else if (intent === "information_pharmacie") {
       entry.appendChild(makeRow("Pharmacie",  row.nom));
       if (row.adresse)      entry.appendChild(makeRow("Adresse",     row.adresse));
