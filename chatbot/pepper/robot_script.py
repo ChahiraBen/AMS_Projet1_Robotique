@@ -26,17 +26,20 @@ except ImportError:
 
 RECORD_SECONDS      = 6
 AUDIO_PATH          = "/home/nao/input.wav"
-AMPLITUDE_THRESHOLD = 300  # amplitude moyenne minimum pour détecter la vraie parole
+AMPLITUDE_THRESHOLD = 500  # amplitude moyenne minimum pour détecter la vraie parole
 
 
 # ── HTTP helpers (compatible Python 2.7) ─────────────────────────────────────
+
+_http_session = requests.Session() if HAS_REQUESTS else None
+
 
 def http_post_json(url, data):
     import json as _json_mod
     payload = _json_mod.dumps(data).encode("utf-8")
     if HAS_REQUESTS:
-        r = requests.post(url, data=payload,
-                          headers={"Content-Type": "application/json"}, timeout=15)
+        r = _http_session.post(url, data=payload,
+                               headers={"Content-Type": "application/json"}, timeout=15)
         return r.json()
     else:
         req = urllib2.Request(url, payload, {"Content-Type": "application/json"})

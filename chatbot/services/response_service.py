@@ -107,7 +107,21 @@ class ResponseService:
         return _format_fallback(data if isinstance(data, list) else [], intent)
 
     def _generate_gemini(self, question: str, history, data) -> str:
-        prompt = ANSWER_PROMPT.format(question=question, history=history, data=data)
+        # Convertir en texte pour éviter les erreurs de format avec les accolades
+        history_str = "\n".join(
+            "User: {}\nBot: {}".format(t.get("user", ""), t.get("bot", ""))
+            for t in (history or [])[-5:]
+        ) or "Aucun historique."
+        data_str = "\n".join(
+            ", ".join("{}: {}".format(k, v) for k, v in row.items() if v)
+            for row in (data if isinstance(data, list) else [])
+        ) or "Aucune donnée."
+
+        prompt = ANSWER_PROMPT.format(
+            question=question,
+            history=history_str,
+            data=data_str,
+        )
         try:
             resp = self.client.models.generate_content(
                 model=Config.GEMINI_MODEL,
@@ -115,6 +129,6 @@ class ResponseService:
             )
             text = (resp.text or "").strip()
             return text or "Je ne dispose pas de cette information."
-        except Exception:
-            self._gemini_available = False
+        except Exception as e:
+            print("[GEMINI] Erreur:", e)
             return "Je ne dispose pas de cette information."

@@ -9,6 +9,8 @@ Reponse      : { "sentence": "texte reconnu" }
 
 import argparse
 import base64
+import os
+import tempfile
 import wave
 from ast import literal_eval
 
@@ -16,38 +18,42 @@ import speech_recognition as sr
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
+recognizer = sr.Recognizer()
 
 
 def speechRecognition(data, params):
-    r = sr.Recognizer()
+    data   = base64.b64decode(data)
+    params = literal_eval(base64.b64decode(params).decode("utf-8"))
 
-    audioFileName = "test.wav"
-    data = base64.b64decode(data)
-    params = base64.b64decode(params)
-    params = literal_eval(params.decode("utf-8"))
-
-    wave_write = wave.open(audioFileName, "w")
-    wave_write.setparams(params)
-    wave_write.writeframes(data)
-    wave_write.close()
-
-    with sr.AudioFile(audioFileName) as source:
-        audioFile = r.record(source)
-
+    tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+    tmp.close()
     try:
-        text = r.recognize_google(audioFile, language="fr-FR")
-        return text
-    except Exception as e:
-        print(e)
+        wf = wave.open(tmp.name, "w")
+        wf.setparams(params)
+        wf.writeframes(data)
+        wf.close()
+
+        with sr.AudioFile(tmp.name) as source:
+            audio = recognizer.record(source)
+
+        return recognizer.recognize_google(audio, language="fr-FR")
+    except sr.UnknownValueError:
         return None
+    except Exception as e:
+        print("[ASR] Erreur : {}".format(e))
+        return None
+    finally:
+        os.unlink(tmp.name)
 
 
 @app.route("/google", methods=["POST"])
 def transcribe():
-    req_data = request.get_json(force=True)
-    result = speechRecognition(req_data["data"], req_data["params"])
-    print(result)
-    return jsonify({"sentence": result})
+    payload = request.get_json(force=True)
+    if not payload or "data" not in payload or "params" not in payload:
+        return jsonify({"sentence": None, "error": "Champs data et params requis"}), 400
+    sentence = speechRecognition(payload["data"], payload["params"])
+    print("[ASR] Transcription : {}".format(sentence))
+    return jsonify({"sentence": sentence})
 
 
 if __name__ == "__main__":
