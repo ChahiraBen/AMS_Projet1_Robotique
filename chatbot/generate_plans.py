@@ -15,22 +15,31 @@ GRAY_TEXT  = "#555555"
 HIGHLIGHT  = "#0056b3"
 HIGHLIGHT_TEXT = "#ffffff"
 
-# Tous les étages (du bas vers le haut dans l'affichage SVG = haut vers bas)
+# Tous les étages — ordre d'affichage : étage le plus haut en premier
 FLOORS = [
+    (8, "Étage 8",  "Psychiatrie"),
+    (7, "Étage 7",  "Oncologie"),
+    (6, "Étage 6",  "Chirurgie orthopédique"),
+    (5, "Étage 5",  "Neurologie"),
     (4, "Étage 4",  "Maternité"),
     (3, "Étage 3",  "Pédiatrie"),
     (2, "Étage 2",  "Cardiologie"),
     (1, "Étage 1",  "Radiologie"),
-    (0, "R.D.C.",   "Urgences"),
+    (0, "R.D.C.",   "Urgences / Admissions"),
 ]
 
-# Service → fichier SVG
+# Service → étage (slug utilisé comme nom de fichier SVG)
 SERVICES = {
-    "urgences":    0,
-    "radiologie":  1,
-    "cardiologie": 2,
-    "pediatrie":   3,
-    "maternite":   4,
+    "urgences":               0,
+    "admissions":             0,
+    "radiologie":             1,
+    "cardiologie":            2,
+    "pediatrie":              3,
+    "maternite":              4,
+    "neurologie":             5,
+    "chirurgie_orthopedique": 6,
+    "oncologie":              7,
+    "psychiatrie":            8,
 }
 
 W = 480

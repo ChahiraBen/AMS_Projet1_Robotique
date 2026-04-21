@@ -10,6 +10,7 @@ Depuis ton PC :
 
 import qi
 import argparse
+import base64
 import time
 import threading
 import struct
@@ -31,37 +32,35 @@ AMPLITUDE_THRESHOLD = 300  # amplitude moyenne minimum pour détecter la vraie p
 # ── HTTP helpers (compatible Python 2.7) ─────────────────────────────────────
 
 def http_post_json(url, data):
+    import json as _json_mod
+    payload = _json_mod.dumps(data).encode("utf-8")
     if HAS_REQUESTS:
-        r = requests.post(url, json=data, timeout=15)
+        r = requests.post(url, data=payload,
+                          headers={"Content-Type": "application/json"}, timeout=15)
         return r.json()
     else:
-        payload = _json.dumps(data).encode("utf-8")
         req = urllib2.Request(url, payload, {"Content-Type": "application/json"})
         resp = urllib2.urlopen(req, timeout=15)
         return _json.loads(resp.read().decode("utf-8"))
 
 
-def http_post_file(url, filepath):
-    if HAS_REQUESTS:
-        with open(filepath, "rb") as f:
-            r = requests.post(url, files={"audio": ("voice.wav", f, "audio/wav")}, timeout=20)
-        return r.json()
-    else:
-        import mimetools
-        boundary = mimetools.choose_boundary()
-        with open(filepath, "rb") as f:
-            audio_bytes = f.read()
-        body = (
-            "--" + boundary + "\r\n"
-            "Content-Disposition: form-data; name=\"audio\"; filename=\"voice.wav\"\r\n"
-            "Content-Type: audio/wav\r\n\r\n"
-        ).encode("utf-8") + audio_bytes + ("\r\n--" + boundary + "--\r\n").encode("utf-8")
-        req = urllib2.Request(url, body, {
-            "Content-Type": "multipart/form-data; boundary=" + boundary,
-            "Content-Length": str(len(body)),
-        })
-        resp = urllib2.urlopen(req, timeout=20)
-        return _json.loads(resp.read().decode("utf-8"))
+def wav_to_base64(filepath):
+    """Lit un WAV et retourne (b64_frames, b64_params) — compatible Python 2.7."""
+    wf = wave.open(filepath, "r")
+    try:
+        params = wf.getparams()
+        frames = wf.readframes(wf.getnframes())
+    finally:
+        wf.close()
+    b64_data   = base64.b64encode(frames).decode("utf-8")
+    b64_params = base64.b64encode(str(tuple(params)).encode("utf-8")).decode("utf-8")
+    return b64_data, b64_params
+
+
+def http_post_asr(asr_url, filepath):
+    """Envoie l'audio WAV encode en base64 au serveur ASR (approche prof Lefevre)."""
+    b64_data, b64_params = wav_to_base64(filepath)
+    return http_post_json(asr_url, {"data": b64_data, "params": b64_params})
 
 
 # ── Détection de parole par amplitude ────────────────────────────────────────
@@ -151,14 +150,15 @@ class TTSPoller(threading.Thread):
 # ── Thread STT ────────────────────────────────────────────────────────────────
 
 class STTLoop(threading.Thread):
-    """Enregistre le micro de Pepper, transcrit via /transcribe, envoie à /chatbot."""
+    """Enregistre le micro de Pepper, transcrit via ASR server, envoie à /chatbot."""
 
-    def __init__(self, server_url, recorder, tts_service, tts_poller):
+    def __init__(self, server_url, asr_url, recorder, tts_service, tts_poller):
         super(STTLoop, self).__init__()
         self.server_url  = server_url
+        self.asr_url     = asr_url
         self.recorder    = recorder
-        self.tts         = tts_service   # ALTextToSpeech pour dire "j'écoute"
-        self.tts_poller  = tts_poller    # pour vérifier is_speaking
+        self.tts         = tts_service
+        self.tts_poller  = tts_poller
         self.daemon      = True
         self._stop       = threading.Event()
 
@@ -194,10 +194,10 @@ class STTLoop(threading.Thread):
                     print("[STT] Silence, ignoré.")
                     continue  # reboucle sans rien dire
 
-                # Transcrire
-                print("[STT] Envoi au serveur...")
-                result = http_post_file("{}/transcribe".format(self.server_url), AUDIO_PATH)
-                text = (result.get("text") or "").strip()
+                # Transcrire via le serveur ASR (approche prof Lefevre)
+                print("[STT] Envoi au serveur ASR...")
+                result = http_post_asr("{}/google".format(self.asr_url), AUDIO_PATH)
+                text = (result.get("sentence") or "").strip()
                 print("[STT] Transcription : {}".format(
                     text.encode("utf-8", "replace") if isinstance(text, type(u"")) else text
                 ))
@@ -235,7 +235,7 @@ class STTLoop(threading.Thread):
 
 # ── Boucle principale ─────────────────────────────────────────────────────────
 
-def run(server_url, pepper_ip="127.0.0.1", pepper_port=9559, enable_stt=False):
+def run(server_url, asr_url, pepper_ip="127.0.0.1", pepper_port=9559, enable_stt=False):
 
     app = qi.Application(
         ["PepperChatbot", "--qi-url", "tcp://{}:{}".format(pepper_ip, pepper_port)]
@@ -310,7 +310,7 @@ def run(server_url, pepper_ip="127.0.0.1", pepper_port=9559, enable_stt=False):
         print("[..] Chargement ALAudioRecorder...")
         recorder = qi_session.service("ALAudioRecorder")
         print("[OK] ALAudioRecorder")
-        stt_loop = STTLoop(server_url, recorder, tts, tts_poller)
+        stt_loop = STTLoop(server_url, asr_url, recorder, tts, tts_poller)
         stt_loop.start()
         print("[OK] Thread STT démarré")
 
@@ -330,8 +330,9 @@ def run(server_url, pepper_ip="127.0.0.1", pepper_port=9559, enable_stt=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--server",      default="http://127.0.0.1:5000")
+    parser.add_argument("--asr",         default="http://127.0.0.1:5001")
     parser.add_argument("--pepper-ip",   default="127.0.0.1")
     parser.add_argument("--pepper-port", default=9559, type=int)
     parser.add_argument("--stt",         action="store_true", help="Activer le STT")
     args = parser.parse_args()
-    run(args.server, args.pepper_ip, args.pepper_port, enable_stt=args.stt)
+    run(args.server, args.asr, args.pepper_ip, args.pepper_port, enable_stt=args.stt)
