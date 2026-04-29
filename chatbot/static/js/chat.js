@@ -1,54 +1,9 @@
-// ── Gestion de session ──────────────────────────────────────────────────────
-var INACTIVITY_SECONDS = 60;
-var inactivityTimer = null;
-var countdownTimer  = null;
-var secondsLeft     = INACTIVITY_SECONDS;
-var sessionTimerEl  = document.getElementById("session-timer");
-
-function resetInactivityTimer() {
-  secondsLeft = INACTIVITY_SECONDS;
-  clearTimeout(inactivityTimer);
-  clearInterval(countdownTimer);
-  sessionTimerEl.textContent = "";
-
-  countdownTimer = setInterval(function() {
-    secondsLeft--;
-    if (secondsLeft <= 15) {
-      sessionTimerEl.textContent = "Session expire dans " + secondsLeft + "s";
-    }
-    if (secondsLeft <= 0) {
-      clearInterval(countdownTimer);
-      resetSession();
-    }
-  }, 1000);
-}
-
-function resetSession() {
-  clearTimeout(inactivityTimer);
-  clearInterval(countdownTimer);
-  sessionTimerEl.textContent = "";
-
-  var xhr = new XMLHttpRequest();
-  xhr.open("POST", "/reset", true);
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState !== 4) return;
-    messages.innerHTML = '<div class="message bot"><div class="bubble">Bonjour, comment puis-je vous aider ?</div></div>';
-    hideCard();
-    input.value = "";
-    input.focus();
-    resetInactivityTimer();
-  };
-  xhr.send();
-}
-
-// Démarrer le timer dès le chargement
-resetInactivityTimer();
-
 // ── Chat ────────────────────────────────────────────────────────────────────
 var form      = document.getElementById("chat-form");
 var input     = document.getElementById("user-input");
 var messages  = document.getElementById("messages");
 var sendBtn   = document.getElementById("send-btn");
+var micBtn    = document.getElementById("mic-btn");
 var infoCard  = document.getElementById("info-card");
 var cardTitle = document.getElementById("card-title");
 var cardBody  = document.getElementById("card-body");
@@ -64,15 +19,13 @@ for (var i = 0; i < quickBtns.length; i++) {
   })(quickBtns[i]);
 }
 
-form.addEventListener("submit", function(e) {
-  e.preventDefault();
-  var text = input.value.trim();
-  if (!text) return;
-
-  resetInactivityTimer();
+// ── Envoi d'un message au chatbot (clavier) ──────────────────────────────────
+function sendMessage(text, source) {
+  source = source || "tablet";
   addMessage(text, "user");
   input.value = "";
   sendBtn.disabled = true;
+  micBtn.disabled  = true;
 
   var typingEl = addTyping();
 
@@ -84,6 +37,7 @@ form.addEventListener("submit", function(e) {
     if (xhr.readyState !== 4) return;
     typingEl.remove();
     sendBtn.disabled = false;
+    micBtn.disabled  = false;
     input.focus();
     if (xhr.status === 200) {
       try {
@@ -105,12 +59,73 @@ form.addEventListener("submit", function(e) {
   xhr.onerror = function() {
     typingEl.remove();
     sendBtn.disabled = false;
+    micBtn.disabled  = false;
     addMessage("Erreur de connexion au serveur.", "bot");
   };
 
-  xhr.send(JSON.stringify({ message: text }));
+  xhr.send(JSON.stringify({ message: text, source: source }));
+}
+
+form.addEventListener("submit", function(e) {
+  e.preventDefault();
+  var text = input.value.trim();
+  if (!text) return;
+  sendMessage(text, "tablet");
 });
 
+// ── Micro : déclenche le micro du robot via API ───────────────────────────────
+var isRecording = false;
+
+function setMicUI(recording) {
+  isRecording = recording;
+  if (recording) {
+    micBtn.classList.add("recording");
+    micBtn.title      = "Arrêter l'enregistrement";
+    input.placeholder = "Pepper écoute…";
+  } else {
+    micBtn.classList.remove("recording");
+    micBtn.title      = "Parler";
+    input.placeholder = "Posez votre question…";
+  }
+}
+
+micBtn.addEventListener("click", function() {
+  var endpoint = isRecording ? "/mic/stop" : "/mic/start";
+  micBtn.disabled = true;
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", endpoint, true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    micBtn.disabled = false;
+    setMicUI(!isRecording);
+  };
+  xhr.send();
+});
+
+// ── Polling des messages venant du robot (STT + réponses) ────────────────────
+function pollUpdates() {
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", "/updates", true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4 || xhr.status !== 200) return;
+    try {
+      var data = JSON.parse(xhr.responseText);
+      var msgs = data.messages || [];
+      for (var i = 0; i < msgs.length; i++) {
+        addMessage(msgs[i].text, msgs[i].role);
+      }
+      if (msgs.length > 0) {
+        setMicUI(false);  // remettre le bouton micro en idle après réponse
+        hideCard();
+      }
+    } catch (e) {}
+  };
+  xhr.send();
+}
+
+setInterval(pollUpdates, 1000);
+
+// ── Helpers DOM ───────────────────────────────────────────────────────────────
 function addMessage(text, role) {
   var div = document.createElement("div");
   div.className = "message " + role;
@@ -168,7 +183,6 @@ function showCard(intent, rows) {
       if (row.num_tel)      entry.appendChild(makeRow("Telephone",    row.num_tel));
       if (row.adresse)      entry.appendChild(makeRow("Adresse",      row.adresse));
 
-      // Plan visuel
       if (intent === "localisation_service" && row.nom_service) {
         var key = row.nom_service.toLowerCase()
           .replace("é","e").replace("è","e").replace("ê","e")
@@ -222,27 +236,3 @@ function hideCard() {
     infoCard.className += " hidden";
   }
 }
-
-// ── Polling des messages STT (Pepper parle à voix haute) ────────────────────
-function pollUpdates() {
-  var xhr = new XMLHttpRequest();
-  xhr.open("GET", "/updates", true);
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState !== 4 || xhr.status !== 200) return;
-    try {
-      var data = JSON.parse(xhr.responseText);
-      var msgs = data.messages || [];
-      for (var i = 0; i < msgs.length; i++) {
-        addMessage(msgs[i].text, msgs[i].role);
-        resetInactivityTimer();
-      }
-      if (msgs.length > 0) {
-        hideCard(); // masquer l'ancienne carte si nouveaux messages
-      }
-    } catch (e) {}
-  };
-  xhr.send();
-}
-
-// Démarrer le polling toutes les 1.5 secondes
-setInterval(pollUpdates, 1500);

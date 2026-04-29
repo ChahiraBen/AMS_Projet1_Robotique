@@ -150,6 +150,73 @@ class TTSPoller(threading.Thread):
         self._stop.set()
 
 
+# ── Envoi fichier audio WAV au backend ───────────────────────────────────────
+
+def http_post_audio(url, filepath):
+    with open(filepath, "rb") as f:
+        r = _http_session.post(url, files={"audio": ("audio.wav", f, "audio/wav")}, timeout=30)
+        return r.json()
+
+
+# ── Thread MicController (bouton micro tablette) ──────────────────────────────
+
+class MicController(threading.Thread):
+    """Poll /mic/status et enregistre quand la tablette active le micro."""
+
+    def __init__(self, server_url, recorder, tts_poller):
+        super(MicController, self).__init__()
+        self.server_url = server_url
+        self.recorder   = recorder
+        self.tts_poller = tts_poller
+        self.daemon     = True
+        self._stop      = threading.Event()
+
+    def run(self):
+        was_recording = False
+        while not self._stop.is_set():
+            try:
+                if self.tts_poller.is_speaking:
+                    time.sleep(0.5)
+                    continue
+
+                status    = http_get("{}/mic/status".format(self.server_url))
+                recording = status.get("recording", False)
+
+                if recording and not was_recording:
+                    was_recording = True
+                    try:
+                        self.recorder.stopMicrophonesRecording()
+                    except Exception:
+                        pass
+                    self.recorder.startMicrophonesRecording(AUDIO_PATH, "wav", 16000, [1, 0, 0, 0])
+                    print("[MIC] Enregistrement démarré")
+
+                elif not recording and was_recording:
+                    was_recording = False
+                    self.recorder.stopMicrophonesRecording()
+                    time.sleep(0.3)
+                    print("[MIC] Traitement audio...")
+                    try:
+                        result = http_post_audio("{}/transcribe".format(self.server_url), AUDIO_PATH)
+                        text   = (result.get("text") or "").strip()
+                        print("[MIC] Transcription : {}".format(
+                            text.encode("utf-8", "replace") if isinstance(text, type(u"")) else text
+                        ))
+                        if text:
+                            http_post_json("{}/chatbot".format(self.server_url),
+                                          {"message": text, "source": "stt"})
+                    except Exception as e:
+                        print("[MIC ERR] Transcription : {}".format(e))
+
+            except Exception as e:
+                print("[MIC ERR] {}".format(e))
+
+            time.sleep(0.5)
+
+    def stop(self):
+        self._stop.set()
+
+
 # ── Thread STT ────────────────────────────────────────────────────────────────
 
 class STTLoop(threading.Thread):
@@ -307,12 +374,22 @@ def run(server_url, asr_url, pepper_ip="127.0.0.1", pepper_port=9559, enable_stt
     tts_poller.start()
     print("[OK] Thread TTS démarré")
 
-    # Démarrer STT si demandé
+    # Charger ALAudioRecorder (nécessaire pour MicController et STT)
+    print("[..] Chargement ALAudioRecorder...")
+    recorder = load_service("ALAudioRecorder")
+
+    # Démarrer le MicController (bouton micro tablette, toujours actif)
+    mic_ctrl = None
+    if recorder:
+        mic_ctrl = MicController(server_url, recorder, tts_poller)
+        mic_ctrl.start()
+        print("[OK] Thread MicController démarré")
+    else:
+        print("[WARN] ALAudioRecorder indisponible — bouton micro désactivé")
+
+    # Démarrer STT continu si demandé (ancien mode)
     stt_loop = None
-    if enable_stt:
-        print("[..] Chargement ALAudioRecorder...")
-        recorder = qi_session.service("ALAudioRecorder")
-        print("[OK] ALAudioRecorder")
+    if enable_stt and recorder:
         stt_loop = STTLoop(server_url, asr_url, recorder, tts, tts_poller)
         stt_loop.start()
         print("[OK] Thread STT démarré")
@@ -324,6 +401,8 @@ def run(server_url, asr_url, pepper_ip="127.0.0.1", pepper_port=9559, enable_stt
         print("\n[..] Arrêt.")
     finally:
         tts_poller.stop()
+        if mic_ctrl:
+            mic_ctrl.stop()
         if stt_loop:
             stt_loop.stop()
         motion.rest()

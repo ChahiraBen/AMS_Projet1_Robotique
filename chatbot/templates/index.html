@@ -33,10 +33,6 @@
   </main>
 
   <footer>
-    <div id="session-bar">
-      <span id="session-timer"></span>
-      <button id="reset-btn" onclick="resetSession()">Fin de session</button>
-    </div>
     <form id="chat-form" autocomplete="off">
       <input
         id="user-input"
@@ -45,6 +41,14 @@
         autofocus
         maxlength="300"
       />
+      <button type="button" id="mic-btn" title="Parler" aria-label="Activer le micro">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </button>
       <button type="submit" id="send-btn">Envoyer</button>
     </form>
     <div id="quick-buttons">
@@ -54,7 +58,6 @@
       <button class="quick-btn" data-msg="Quels sont les horaires de la radiologie ?">🕐 Horaires</button>
       <button class="quick-btn" data-msg="Pharmacie la plus proche ?">💊 Pharmacie</button>
       <button class="quick-btn" data-msg="Où se trouve la pédiatrie ?">📍 Pédiatrie</button>
-      <button class="quick-btn" data-msg="Comment prendre un rendez-vous ?">📅 Rendez-vous</button>
     </div>
   </footer>
 
