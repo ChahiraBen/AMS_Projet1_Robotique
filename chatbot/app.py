@@ -1,6 +1,7 @@
-from flask import Flask, render_template, session
+from flask import Flask, render_template
 from config import Config
 from controllers.chatbot_controller import bp as chatbot_bp
+from controllers.conversations_controller import bp as conv_bp
 
 
 def create_app():
@@ -8,11 +9,8 @@ def create_app():
     app.config.from_object(Config)
     app.secret_key = Config.SECRET_KEY
 
-    @app.before_request
-    def make_session_permanent():
-        session.permanent = True
-
     app.register_blueprint(chatbot_bp)
+    app.register_blueprint(conv_bp)
 
     @app.route("/")
     def index():

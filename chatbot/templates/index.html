@@ -7,59 +7,66 @@
   <link rel="stylesheet" href="/static/css/style.css" />
 </head>
 <body>
-  <header>
-    <div class="header-inner">
-      <img src="/static/img/pepper_icon.svg" alt="Pepper" class="pepper-icon" onerror="this.style.display='none'" />
-      <div>
-        <h1>Assistant d'accueil</h1>
-        <p class="subtitle">Hôpital Central d'Avignon</p>
-      </div>
-    </div>
-  </header>
+  <div id="app">
 
-  <main>
-    <div id="chat-container">
-      <div id="messages">
-        <div class="message bot">
-          <div class="bubble">Bonjour ! Je suis Pepper, votre assistant d'accueil. Comment puis-je vous aider ?</div>
+    <!-- ── Sidebar (visible par défaut) ── -->
+    <aside id="sidebar" class="open">
+      <div id="sidebar-header">
+        <span class="sidebar-title">Conversations</span>
+        <button id="new-chat-btn" title="Nouvelle conversation">+</button>
+      </div>
+      <div id="conv-list"></div>
+    </aside>
+
+    <!-- ── Zone principale (toujours pleine largeur) ── -->
+    <div id="main-panel">
+      <header>
+        <div class="header-inner">
+          <button id="sidebar-toggle" title="Menu">&#9776;</button>
+          <img src="/static/img/pepper_icon.svg" alt="Pepper" class="pepper-icon" onerror="this.style.display='none'" />
+          <div>
+            <h1>Assistant d'accueil</h1>
+            <p class="subtitle">Hôpital Central d'Avignon</p>
+          </div>
         </div>
-      </div>
-    </div>
+      </header>
 
-    <div id="info-card" class="hidden">
-      <h2 id="card-title"></h2>
-      <div id="card-body"></div>
-    </div>
-  </main>
+      <main>
+        <div id="chat-container">
+          <div id="messages">
+          </div>
+        </div>
 
-  <footer>
-    <form id="chat-form" autocomplete="off">
-      <input
-        id="user-input"
-        type="text"
-        placeholder="Posez votre question…"
-        autofocus
-        maxlength="300"
-      />
-      <button type="button" id="mic-btn" title="Parler" aria-label="Activer le micro">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-          <line x1="12" y1="19" x2="12" y2="23"/>
-          <line x1="8" y1="23" x2="16" y2="23"/>
-        </svg>
-      </button>
-      <button type="submit" id="send-btn">Envoyer</button>
-    </form>
-    <div id="quick-buttons">
-      <button class="quick-btn" data-msg="Où se trouve la cardiologie ?">📍 Cardiologie</button>
-      <button class="quick-btn" data-msg="Où sont les urgences ?">🚨 Urgences</button>
-      <button class="quick-btn" data-msg="Je cherche le docteur Martin">👨‍⚕️ Dr. Martin</button>
-      <button class="quick-btn" data-msg="Quels sont les horaires de la radiologie ?">🕐 Horaires</button>
-      <button class="quick-btn" data-msg="Pharmacie la plus proche ?">💊 Pharmacie</button>
-      <button class="quick-btn" data-msg="Où se trouve la pédiatrie ?">📍 Pédiatrie</button>
+        <div id="info-card" class="hidden">
+          <h2 id="card-title"></h2>
+          <div id="card-body"></div>
+        </div>
+      </main>
+
+      <footer>
+        <form id="chat-form" autocomplete="off">
+          <input id="user-input" type="text" placeholder="Posez votre question…" autofocus maxlength="300" />
+          <button type="button" id="mic-btn" title="Parler" aria-label="Activer le micro">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
+          <button type="submit" id="send-btn">Envoyer</button>
+        </form>
+        <div id="quick-buttons">
+          <button class="quick-btn" data-msg="Où se trouve la cardiologie ?">📍 Cardiologie</button>
+          <button class="quick-btn" data-msg="Où sont les urgences ?">🚨 Urgences</button>
+          <button class="quick-btn" data-msg="Je cherche le docteur Martin">👨‍⚕️ Dr. Martin</button>
+          <button class="quick-btn" data-msg="Quels sont les horaires de la radiologie ?">🕐 Horaires</button>
+          <button class="quick-btn" data-msg="Pharmacie la plus proche ?">💊 Pharmacie</button>
+          <button class="quick-btn" data-msg="Je voudrais prendre un rendez-vous">📅 Rendez-vous</button>
+        </div>
+      </footer>
     </div>
-  </footer>
+  </div>
 
   <script src="/static/js/chat.js"></script>
 </body>

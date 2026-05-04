@@ -2,13 +2,26 @@ import threading
 import tempfile
 import os
 from flask import Blueprint, request, jsonify, session
+from openai import OpenAI
+from config import Config
 from services.dialog_service import DialogService
-
-import speech_recognition as sr
-_recognizer = sr.Recognizer()
+from repositories.conv_repo import ConversationRepository
 
 bp = Blueprint("chatbot_bp", __name__)
 dialog_service = DialogService()
+_conv_repo = ConversationRepository()
+_whisper = OpenAI(api_key=Config.OPENAI_API_KEY)
+
+_robot_conv_id      = None
+_robot_conv_lock    = threading.Lock()
+
+
+def _get_robot_conv_id():
+    global _robot_conv_id
+    with _robot_conv_lock:
+        if _robot_conv_id is None:
+            _robot_conv_id = _conv_repo.create_robot()
+        return _robot_conv_id
 
 _chat_queue = []
 _chat_lock  = threading.Lock()
@@ -39,7 +52,14 @@ def chatbot():
     if not message:
         return jsonify({"error": "Veuillez saisir un message."}), 400
 
-    result = dialog_service.handle_message(message, session)
+    conversation_id = payload.get("conversation_id", "")
+    if not conversation_id:
+        if source == "stt":
+            conversation_id = _get_robot_conv_id()
+        else:
+            return jsonify({"error": "conversation_id manquant"}), 400
+
+    result = dialog_service.handle_message(message, conversation_id)
     response_text = result.get("response", "")
 
     if source == "stt":
@@ -63,14 +83,16 @@ def transcribe():
 
     text = ""
     try:
-        with sr.AudioFile(tmp_path) as source:
-            audio_data = _recognizer.record(source)
-        text = _recognizer.recognize_google(audio_data, language="fr-FR")
-        print("[STT] {}".format(text))
-    except sr.UnknownValueError:
-        print("[STT] Parole non reconnue")
+        with open(tmp_path, "rb") as f:
+            resp = _whisper.audio.transcriptions.create(
+                model="whisper-1",
+                file=f,
+                language="fr",
+            )
+        text = (resp.text or "").strip()
+        print("[STT]", text)
     except Exception as e:
-        print("[STT ERR] {}".format(e))
+        print("[STT ERR]", e)
     finally:
         try:
             os.unlink(tmp_path)
