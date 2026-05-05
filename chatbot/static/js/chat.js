@@ -1,4 +1,9 @@
-// ── Éléments DOM ─────────────────────────────────────────────────────────────
+// ── SVG icons ─────────────────────────────────────────────────────────────────
+var SVG_BOT = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 2a2 2 0 0 1 2 2 2 2 0 0 1-2 2 2 2 0 0 1-2-2 2 2 0 0 1 2-2m-1 5h2v1h3a4 4 0 0 1 4 4v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-3a4 4 0 0 1 4-4h3V7M9 13a1.5 1.5 0 0 0-1.5 1.5A1.5 1.5 0 0 0 9 16a1.5 1.5 0 0 0 1.5-1.5A1.5 1.5 0 0 0 9 13m6 0a1.5 1.5 0 0 0-1.5 1.5A1.5 1.5 0 0 0 15 16a1.5 1.5 0 0 0 1.5-1.5A1.5 1.5 0 0 0 15 13z"/></svg>';
+var SVG_USER = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v2h20v-2c0-3.3-6.7-5-10-5z"/></svg>';
+var SVG_DEL  = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5-1-1h-5l-1 1H5v2h14V4z"/></svg>';
+
+// ── Éléments DOM ──────────────────────────────────────────────────────────────
 var form          = document.getElementById("chat-form");
 var input         = document.getElementById("user-input");
 var messages      = document.getElementById("messages");
@@ -48,7 +53,7 @@ function renderConvList(convs) {
       var del = document.createElement("button");
       del.className = "conv-delete";
       del.title = "Supprimer";
-      del.textContent = "🗑";
+      del.innerHTML = SVG_DEL;
       del.addEventListener("click", function(e) {
         e.stopPropagation();
         deleteConversation(conv.id);
@@ -74,13 +79,9 @@ function createConversation() {
 
 function deleteConversation(convId) {
   xhr("DELETE", "/conversations/" + convId, null, function() {
-    if (convId === currentConvId) {
-      currentConvId = null;
-    }
+    if (convId === currentConvId) currentConvId = null;
     loadConversations();
-    if (!currentConvId) {
-      createConversation();
-    }
+    if (!currentConvId) createConversation();
   });
 }
 
@@ -97,7 +98,6 @@ function switchConversation(convId) {
       }
     }
   });
-  // Mettre à jour la sidebar
   var items = convList.querySelectorAll(".conv-item");
   for (var i = 0; i < items.length; i++) {
     items[i].classList.toggle("active", items[i].dataset.id === convId);
@@ -105,9 +105,7 @@ function switchConversation(convId) {
   hideCard();
 }
 
-function clearMessages() {
-  messages.innerHTML = "";
-}
+function clearMessages() { messages.innerHTML = ""; }
 
 function addWelcome() {
   addMessage("Bonjour ! Je suis Pepper, votre assistant d'accueil. Comment puis-je vous aider ?", "bot");
@@ -132,7 +130,6 @@ function sendMessage(text, source) {
     micBtn.disabled  = false;
     input.focus();
     addMessage(data.response || data.error || "Erreur inattendue.", "bot");
-    // Rafraîchir le titre dans la sidebar après le premier message
     loadConversations();
     hideCard();
   }, function() {
@@ -149,17 +146,6 @@ form.addEventListener("submit", function(e) {
   if (!text) return;
   sendMessage(text, "tablet");
 });
-
-// Quick buttons
-var quickBtns = document.querySelectorAll(".quick-btn");
-for (var i = 0; i < quickBtns.length; i++) {
-  (function(btn) {
-    btn.addEventListener("click", function() {
-      input.value = btn.getAttribute("data-msg");
-      form.dispatchEvent(new Event("submit"));
-    });
-  })(quickBtns[i]);
-}
 
 // ── Micro ─────────────────────────────────────────────────────────────────────
 function setMicUI(recording) {
@@ -218,44 +204,38 @@ function scrollToBottom() {
   });
 }
 
+function makeAvatar(role) {
+  var span = document.createElement("span");
+  span.className = "avatar avatar-" + role;
+  span.innerHTML = (role === "bot") ? SVG_BOT : SVG_USER;
+  return span;
+}
+
 function addMessage(text, role) {
   var div    = document.createElement("div");
   div.className = "message " + role;
-
-  var avatar = document.createElement("span");
-  avatar.className = "avatar";
-  avatar.textContent = (role === "bot") ? "🤖" : "👤";
-
   var bubble = document.createElement("div");
   bubble.className = "bubble";
   bubble.textContent = text;
-
   if (role === "bot") {
-    div.appendChild(avatar);
+    div.appendChild(makeAvatar("bot"));
     div.appendChild(bubble);
   } else {
     div.appendChild(bubble);
-    div.appendChild(avatar);
+    div.appendChild(makeAvatar("user"));
   }
-
   messages.appendChild(div);
   scrollToBottom();
   return div;
 }
 
 function addTyping() {
-  var div    = document.createElement("div");
+  var div = document.createElement("div");
   div.className = "message bot typing";
-
-  var avatar = document.createElement("span");
-  avatar.className = "avatar";
-  avatar.textContent = "🤖";
-
   var bubble = document.createElement("div");
   bubble.className = "bubble";
   bubble.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
-
-  div.appendChild(avatar);
+  div.appendChild(makeAvatar("bot"));
   div.appendChild(bubble);
   messages.appendChild(div);
   scrollToBottom();
@@ -283,14 +263,12 @@ var SERVICE_PLANS = {
   "urgences":   "/static/img/plans/plan_urgences.svg",
   "radiologie": "/static/img/plans/plan_radiologie.svg",
   "cardiologie":"/static/img/plans/plan_cardiologie.svg",
-  "pédiatrie":  "/static/img/plans/plan_pediatrie.svg",
   "pediatrie":  "/static/img/plans/plan_pediatrie.svg",
-  "maternité":  "/static/img/plans/plan_maternite.svg",
   "maternite":  "/static/img/plans/plan_maternite.svg"
 };
 
 function showCard(intent, rows) {
-  infoCard.className = infoCard.className.replace(" hidden", "").replace("hidden", "");
+  infoCard.className = infoCard.className.replace(/\bhidden\b/g, "").trim();
   cardBody.innerHTML = "";
   var titles = {
     localisation_service:  "Localisation du service",
@@ -301,7 +279,7 @@ function showCard(intent, rows) {
   };
   cardTitle.textContent = titles[intent] || "Informations";
   for (var i = 0; i < rows.length; i++) {
-    var row = rows[i];
+    var row   = rows[i];
     var entry = document.createElement("div");
     entry.className = "card-entry";
     if (intent === "localisation_service" || intent === "horaires_service" || intent === "contact_service") {
@@ -312,27 +290,25 @@ function showCard(intent, rows) {
       if (row.num_tel)      entry.appendChild(makeRow("Téléphone",    row.num_tel));
       if (row.adresse)      entry.appendChild(makeRow("Adresse",      row.adresse));
       if (intent === "localisation_service" && row.nom_service) {
-        var key = row.nom_service.toLowerCase().replace(/[éèê]/g,"e").replace(/[â]/g,"a").replace(/[î]/g,"i");
-        var planUrl = SERVICE_PLANS[key];
-        if (planUrl) {
-          var planDiv = document.createElement("div");
-          planDiv.style.marginTop = "10px";
+        var key = row.nom_service.toLowerCase()
+          .replace(/[éèê]/g,"e").replace(/[â]/g,"a").replace(/[î]/g,"i");
+        if (SERVICE_PLANS[key]) {
           var img = document.createElement("img");
-          img.src = planUrl; img.style.width = "100%"; img.style.borderRadius = "8px";
-          planDiv.appendChild(img);
-          entry.appendChild(planDiv);
+          img.src = SERVICE_PLANS[key];
+          img.style.cssText = "width:100%;border-radius:8px;margin-top:10px";
+          entry.appendChild(img);
         }
       }
     } else if (intent === "localisation_medecin") {
-      entry.appendChild(makeRow("Médecin",    row.nom_medecin));
+      entry.appendChild(makeRow("Médecin",   row.nom_medecin));
       if (row.specialite)   entry.appendChild(makeRow("Spécialité",  row.specialite));
       if (row.localisation) entry.appendChild(makeRow("Bureau",      row.localisation));
       if (row.horaire)      entry.appendChild(makeRow("Horaires",    row.horaire));
     } else if (intent === "information_pharmacie") {
-      entry.appendChild(makeRow("Pharmacie",  row.nom));
-      if (row.adresse)      entry.appendChild(makeRow("Adresse",     row.adresse));
-      if (row.distance)     entry.appendChild(makeRow("Distance",    row.distance + " km"));
-      if (row.horaire)      entry.appendChild(makeRow("Horaires",    row.horaire));
+      entry.appendChild(makeRow("Pharmacie", row.nom));
+      if (row.adresse)  entry.appendChild(makeRow("Adresse",  row.adresse));
+      if (row.distance) entry.appendChild(makeRow("Distance", row.distance + " km"));
+      if (row.horaire)  entry.appendChild(makeRow("Horaires", row.horaire));
     }
     cardBody.appendChild(entry);
   }
