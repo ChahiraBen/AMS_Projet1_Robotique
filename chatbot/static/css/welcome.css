@@ -1,0 +1,134 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+  min-height: 100vh;
+  background: #0a4a8f;
+  background: -webkit-linear-gradient(145deg, #0a4a8f 0%, #1a6fc4 55%, #2581d8 100%);
+  background: linear-gradient(145deg, #0a4a8f 0%, #1a6fc4 55%, #2581d8 100%);
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.page {
+  width: 100%;
+  max-width: 480px;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 44px 36px 36px;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .28);
+}
+
+/* ── Logo ── */
+.logo {
+  width: 78px;
+  height: 78px;
+  margin: 0 auto 20px;
+}
+.logo svg { width: 100%; height: 100%; }
+
+/* ── Text ── */
+.brand {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: #1a6fc4;
+  margin-bottom: 10px;
+}
+
+h1 {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: #1a2033;
+  line-height: 1.25;
+  margin-bottom: 14px;
+}
+h1 em {
+  font-style: normal;
+  color: #1a6fc4;
+}
+
+.desc {
+  font-size: .97rem;
+  color: #6b7a99;
+  line-height: 1.65;
+  margin-bottom: 30px;
+}
+
+/* ── CTA button ── */
+.btn {
+  display: -webkit-inline-flex;
+  display: inline-flex;
+  -webkit-align-items: center;
+  align-items: center;
+  background: #1a6fc4;
+  background: -webkit-linear-gradient(135deg, #2581d8 0%, #0047a0 100%);
+  background: linear-gradient(135deg, #2581d8 0%, #0047a0 100%);
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 15px 34px;
+  border-radius: 50px;
+  box-shadow: 0 6px 22px rgba(0, 71, 160, .38);
+  margin-bottom: 32px;
+  -webkit-transition: -webkit-transform .18s, box-shadow .18s;
+  transition: transform .18s, box-shadow .18s;
+}
+.btn svg { margin-right: 10px; }
+.btn:hover {
+  -webkit-transform: translateY(-2px);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 71, 160, .48);
+}
+
+/* ── Features ── */
+.feats {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-justify-content: center;
+  justify-content: center;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+  border-top: 1px solid #e8eef7;
+  padding-top: 24px;
+}
+
+.feat {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  -webkit-align-items: center;
+  align-items: center;
+  width: 25%;
+  padding: 0 6px;
+  color: #6b7a99;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.feat svg {
+  color: #1a6fc4;
+  margin-bottom: 6px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 420px) {
+  .card { padding: 36px 20px 28px; }
+  h1 { font-size: 1.55rem; }
+  .feat { width: 50%; margin-bottom: 16px; }
+  .btn { font-size: .96rem; padding: 14px 24px; }
+}

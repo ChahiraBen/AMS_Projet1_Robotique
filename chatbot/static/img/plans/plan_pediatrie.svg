@@ -1,0 +1,35 @@
+<svg width="480" height="563" xmlns="http://www.w3.org/2000/svg" font-family="Arial,sans-serif">
+<rect width="480" height="563" fill="#f4f6f9"/>
+<text x="240" y="32" text-anchor="middle" font-size="15" font-weight="bold" fill="#0056b3">Plan de l'hôpital</text>
+<rect x="100" y="55" width="300" height="48" fill="#ffffff" stroke="#cccccc" stroke-width="1" rx="4"/>
+<text x="110" y="83" font-size="11" fill="#555555">Étage 8</text>
+<text x="250" y="83" text-anchor="middle" font-size="13" font-weight="normal" fill="#0056b3">Psychiatrie</text>
+<rect x="100" y="107" width="300" height="48" fill="#ffffff" stroke="#cccccc" stroke-width="1" rx="4"/>
+<text x="110" y="135" font-size="11" fill="#555555">Étage 7</text>
+<text x="250" y="135" text-anchor="middle" font-size="13" font-weight="normal" fill="#0056b3">Oncologie</text>
+<rect x="100" y="159" width="300" height="48" fill="#ffffff" stroke="#cccccc" stroke-width="1" rx="4"/>
+<text x="110" y="187" font-size="11" fill="#555555">Étage 6</text>
+<text x="250" y="187" text-anchor="middle" font-size="13" font-weight="normal" fill="#0056b3">Chirurgie orthopédique</text>
+<rect x="100" y="211" width="300" height="48" fill="#ffffff" stroke="#cccccc" stroke-width="1" rx="4"/>
+<text x="110" y="239" font-size="11" fill="#555555">Étage 5</text>
+<text x="250" y="239" text-anchor="middle" font-size="13" font-weight="normal" fill="#0056b3">Neurologie</text>
+<rect x="100" y="263" width="300" height="48" fill="#ffffff" stroke="#cccccc" stroke-width="1" rx="4"/>
+<text x="110" y="291" font-size="11" fill="#555555">Étage 4</text>
+<text x="250" y="291" text-anchor="middle" font-size="13" font-weight="normal" fill="#0056b3">Maternité</text>
+<rect x="100" y="315" width="300" height="48" fill="#0056b3" stroke="#0056b3" stroke-width="2" rx="4"/>
+<text x="110" y="343" font-size="11" fill="#ffffff">Étage 3</text>
+<text x="250" y="343" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">Pédiatrie</text>
+<text x="370" y="345" font-size="18" fill="#ffffff">&#9654;</text>
+<rect x="100" y="367" width="300" height="48" fill="#ffffff" stroke="#cccccc" stroke-width="1" rx="4"/>
+<text x="110" y="395" font-size="11" fill="#555555">Étage 2</text>
+<text x="250" y="395" text-anchor="middle" font-size="13" font-weight="normal" fill="#0056b3">Cardiologie</text>
+<rect x="100" y="419" width="300" height="48" fill="#ffffff" stroke="#cccccc" stroke-width="1" rx="4"/>
+<text x="110" y="447" font-size="11" fill="#555555">Étage 1</text>
+<text x="250" y="447" text-anchor="middle" font-size="13" font-weight="normal" fill="#0056b3">Radiologie</text>
+<rect x="100" y="471" width="300" height="48" fill="#ffffff" stroke="#cccccc" stroke-width="1" rx="4"/>
+<text x="110" y="499" font-size="11" fill="#555555">R.D.C.</text>
+<text x="250" y="499" text-anchor="middle" font-size="13" font-weight="normal" fill="#0056b3">Urgences / Admissions</text>
+<rect x="420" y="55" width="32" height="464" fill="#e8f0fe" stroke="#0056b3" stroke-width="1" rx="4"/>
+<text x="436" y="75" text-anchor="middle" font-size="10" fill="#0056b3">🛗</text>
+<text x="436" y="533" text-anchor="middle" font-size="9" fill="#555555">Ascenseur</text>
+</svg>
