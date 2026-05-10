@@ -7,11 +7,18 @@ from repositories.conv_repo import ConversationRepository
 
 _SYSTEM = (
     "Tu es Pepper, l'assistant d'accueil de l'hôpital. "
-    "Tu réponds en français, de façon courte et naturelle, comme si tu parlais à un patient. "
-    "Réponds en 1 à 3 phrases maximum. Pas d'emoji. Pas de mise en forme markdown. "
+    "Tu réponds en français, de façon courte, claire et rassurante, comme un professionnel bienveillant. "
+    "Pas d'emoji. Pas de mise en forme markdown. "
     "Pour toute question sur les services, médecins, horaires, contacts ou pharmacies, "
     "utilise TOUJOURS l'outil query_hospital avant de répondre. "
-    "Pour les rendez-vous, suis ces étapes : "
+
+    "LOCALISATION D'UN SERVICE : Quand un patient demande où se trouve un service, "
+    "donne une réponse simple avec la localisation (ex : 'Le service de Cardiologie se trouve au 2e étage.'). "
+    "Termine TOUJOURS par cette phrase exacte : "
+    "'Vous pouvez cliquer sur le bouton Plan en haut à droite pour obtenir un itinéraire guidé.' "
+    "Ne décris pas d'itinéraire toi-même et n'ajoute rien d'autre sur la navigation. "
+
+    "RENDEZ-VOUS : suis ces étapes : "
     "1) Si le patient mentionne déjà un médecin, va directement à l'étape 3. "
     "Si le patient donne un service/spécialité sans médecin précis, appelle query_hospital "
     "intent=liste_medecins+nom_service pour proposer les médecins de ce service. "
@@ -25,6 +32,7 @@ _SYSTEM = (
     "Si le patient veut un autre jour, rappelle get_available_slots avec la nouvelle date. "
     "5) Quand le patient choisit un créneau horaire précis, demande son nom complet. "
     "6) Appelle book_appointment avec toutes les informations. "
+
     "Pour les salutations et les au revoir, réponds directement sans outil."
 )
 
@@ -103,6 +111,37 @@ _TOOLS = [
 ]
 
 
+_LOCATION_WORDS = [
+    "où", "ou est", "localisation", "situe", "situee",
+    "trouver", "trouve", "cherche", "aller", "chemin",
+    "acces", "comment y", "direction", "navigue", "guider",
+    "se trouve", "indiquer", "montrer", "conduire",
+]
+
+_SERVICE_MAP = [
+    (["urgence"],                   "Urgences"),
+    (["accueil", "admission"],      "Accueil"),
+    (["cardiologie", "cardio"],     "Cardiologie"),
+    (["radiologie", "radio"],       "Radiologie"),
+    (["pediatrie", "pédiatrie"],    "Pédiatrie"),
+    (["maternite", "maternité"],    "Maternité"),
+    (["pharmacie"],                 "Pharmacie"),
+]
+
+
+def _detect_service_from_message(message):
+    """Détecte un service hospitalier depuis le message si c'est une question de localisation."""
+    m = message.lower()
+    m = m.replace("é", "e").replace("è", "e").replace("ê", "e").replace("à", "a")
+    is_location = any(kw in m for kw in _LOCATION_WORDS)
+    if not is_location:
+        return None
+    for keywords, service in _SERVICE_MAP:
+        if any(kw in m for kw in keywords):
+            return service
+    return None
+
+
 def _rows_to_str(rows):
     if not rows:
         return "Aucune donnée trouvée dans la base de données."
@@ -174,7 +213,6 @@ class DialogService:
         return "Outil inconnu."
 
     def handle_message(self, message, conversation_id):
-        # Historique depuis la BDD
         history = self.convs.get_messages(conversation_id)
 
         oai_messages = [{"role": "system", "content": _SYSTEM}]
@@ -184,6 +222,11 @@ class DialogService:
                 "content": m["content"],
             })
         oai_messages.append({"role": "user", "content": message})
+
+        map_service = None  # service à afficher sur la carte
+
+        # Sauvegarder le message utilisateur avant l'appel OpenAI
+        self.convs.append_message(conversation_id, "user", message)
 
         try:
             resp = self.client.chat.completions.create(
@@ -196,6 +239,7 @@ class DialogService:
             )
         except Exception as e:
             print("[OPENAI ERR]", e)
+            self.convs.append_message(conversation_id, "bot", "Désolé, je suis temporairement indisponible.")
             return {"response": "Désolé, je suis temporairement indisponible."}
 
         response_message = resp.choices[0].message
@@ -204,7 +248,15 @@ class DialogService:
             oai_messages.append(response_message)
             for tool_call in response_message.tool_calls:
                 args   = json.loads(tool_call.function.arguments)
+                print("[TOOL] {} | args={}".format(tool_call.function.name, args))
                 result = self._execute_tool(tool_call.function.name, args)
+
+                # Capturer le service demandé pour afficher la carte
+                if (tool_call.function.name == "query_hospital"
+                        and args.get("intent") == "localisation_service"
+                        and args.get("nom_service")):
+                    map_service = args["nom_service"]
+
                 oai_messages.append({
                     "role": "tool", "tool_call_id": tool_call.id, "content": result,
                 })
@@ -219,12 +271,24 @@ class DialogService:
                 )
             except Exception as e:
                 print("[OPENAI ERR]", e)
-                self.convs.append_message(conversation_id, "user", message)
                 self.convs.append_message(conversation_id, "bot", "Désolé, je suis temporairement indisponible.")
                 return {"response": "Désolé, je suis temporairement indisponible."}
             response_message = resp.choices[0].message
 
         bot_text = (response_message.content or "").strip()
-        self.convs.append_message(conversation_id, "user", message)
+
+        # Fallback : si aucun service capturé via l'outil, détection par mots-clés
+        if not map_service:
+            map_service = _detect_service_from_message(message)
+            if map_service:
+                print("[MAP] fallback keywords → {}".format(map_service))
+
         self.convs.append_message(conversation_id, "bot", bot_text)
-        return {"response": bot_text}
+
+        result = {"response": bot_text}
+        if map_service:
+            print("[MAP] map_service={}".format(map_service))
+            result["map_service"] = map_service
+        else:
+            print("[MAP] aucun service détecté")
+        return result

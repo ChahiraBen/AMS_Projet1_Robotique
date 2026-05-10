@@ -1,14 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-Script à exécuter DIRECTEMENT SUR LE ROBOT Pepper (Python 2.7).
 
-Depuis ton PC :
-  scp robot_script.py nao@IP_PEPPER:/home/nao/robot_script.py
-  ssh nao@IP_PEPPER "python /home/nao/robot_script.py --server http://IP_TON_PC:5000"
-"""
 
 import qi
 import argparse
+import os
 import time
 import threading
 
@@ -63,6 +58,22 @@ def http_get(url):
 
 # ── Thread TTS ────────────────────────────────────────────────────────────────
 
+def _clean_tts(text):
+    """Nettoie le texte pour éviter que NAOqi interprète des caractères comme du markup."""
+    # Guillemets typographiques → guillemets simples ou suppression
+    text = text.replace(u"’", u"'")   # ' apostrophe courbe
+    text = text.replace(u"‘", u"'")   # ' apostrophe ouvrante
+    text = text.replace(u"“", u'"')   # " guillemet ouvrant
+    text = text.replace(u"”", u'"')   # " guillemet fermant
+    text = text.replace(u"«", u"")    # « guillemet français ouvrant
+    text = text.replace(u"»", u"")    # » guillemet français fermant
+    # Caractères spéciaux du markup NAOqi ALAnimatedSpeech
+    text = text.replace(u"^", u"")
+    text = text.replace(u"\\", u"")
+    text = text.replace(u"\x00", u"")
+    return text
+
+
 class TTSPoller(threading.Thread):
     """Poll /speak toutes les secondes et fait parler Pepper."""
 
@@ -81,15 +92,14 @@ class TTSPoller(threading.Thread):
                     result = http_get("{}/speak".format(self.server_url))
                     text   = (result.get("text") or "").strip()
                     if text:
-                        if len(text) > 150:
-                            text = text[:147] + "..."
-                        try:
-                            encoded = text.encode("utf-8") if isinstance(text, type(u"")) else text
-                        except Exception:
-                            encoded = text
+                        if len(text) > 400:
+                            text = text[:397] + "..."
+                        if not isinstance(text, type(u"")):
+                            text = text.decode("utf-8", "replace")
+                        text = _clean_tts(text)
                         self.is_speaking = True
                         try:
-                            self.say_fn(encoded)
+                            self.say_fn(text)
                         except Exception as e:
                             print("[TTS ERR] {}".format(e))
                         finally:
@@ -141,6 +151,13 @@ class MicController(threading.Thread):
                     time.sleep(0.3)
                     print("[MIC] Traitement audio...")
                     try:
+                        try:
+                            fsize = os.path.getsize(AUDIO_PATH)
+                        except Exception:
+                            fsize = 0
+                        if fsize < 16000:
+                            print("[MIC] Audio trop court ({} bytes), ignoré".format(fsize))
+                            continue
                         result = http_post_audio("{}/transcribe".format(self.server_url), AUDIO_PATH)
                         text   = (result.get("text") or "").strip()
                         print("[MIC] Transcription : {}".format(
@@ -216,7 +233,7 @@ def run(server_url, pepper_ip="127.0.0.1", pepper_port=9559):
 
     animated.say("Bonjour ! Je suis votre assistant d accueil.")
 
-    tts_poller = TTSPoller(server_url, animated.say)
+    tts_poller = TTSPoller(server_url, tts.say)
     tts_poller.start()
     print("[OK] Thread TTS démarré")
 
@@ -250,4 +267,14 @@ if __name__ == "__main__":
     parser.add_argument("--pepper-ip",   default="127.0.0.1")
     parser.add_argument("--pepper-port", default=9559, type=int)
     args = parser.parse_args()
-    run(args.server, args.pepper_ip, args.pepper_port)
+
+    # Corriger http:/ → http:// si j'ai oublié un slash
+    server = args.server
+    if server.startswith("http:/") and not server.startswith("http://"):
+        server = "http://" + server[6:]
+    elif server.startswith("https:/") and not server.startswith("https://"):
+        server = "https://" + server[7:]
+    if server != args.server:
+        print("[WARN] URL corrigée : {} → {}".format(args.server, server))
+
+    run(server, args.pepper_ip, args.pepper_port)

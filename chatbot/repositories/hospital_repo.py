@@ -46,7 +46,7 @@ class HospitalRepository:
 
     def find_service_location(self, service_name):
         return query_all(
-            "SELECT nom_service, etage, horraire FROM Service WHERE nom_service LIKE ?",
+            "SELECT nom_service, localisation, horraire FROM Service WHERE nom_service LIKE ?",
             (f"%{service_name}%",),
         )
 
@@ -80,7 +80,7 @@ class HospitalRepository:
         )
 
     def find_all_services(self):
-        return query_all("SELECT nom_service, etage, horraire FROM Service ORDER BY nom_service")
+        return query_all("SELECT nom_service, localisation, horraire FROM Service ORDER BY nom_service")
 
     def find_all_doctors(self, nom_service=None):
         if nom_service:

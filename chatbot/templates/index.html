@@ -1,72 +1,146 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Assistant Pepper – Accueil Hospitalier</title>
-  <link rel="stylesheet" href="/static/css/style.css" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pepper — Assistant d'accueil</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
 </head>
 <body>
-  <div id="app">
+<div id="app">
 
-    <!-- ── Colonne gauche : conversations ── -->
-    <aside id="sidebar">
-      <div id="sidebar-header">
-        <span class="sidebar-title">Conversations</span>
-        <button id="new-chat-btn" title="Nouvelle conversation">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-          </svg>
-        </button>
+  <!-- ══ Sidebar ══ -->
+  <aside id="sidebar">
+    <div id="sidebar-top">
+      <button id="new-chat-btn" title="Nouvelle conversation">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15">
+          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+        </svg>
+        Nouvelle conversation
+      </button>
+    </div>
+
+    <div id="conv-list"></div>
+
+    <div id="sidebar-footer">
+      <a href="/" class="home-link" title="Retour à l'accueil">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+        </svg>
+        Accueil
+      </a>
+    </div>
+  </aside>
+
+  <!-- ══ Main panel ══ -->
+  <div id="main-panel">
+
+    <!-- Header -->
+    <header>
+      <button id="sidebar-toggle" title="Afficher / masquer le menu">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+          <path d="M3 18v-2h18v2H3zm0-5v-2h18v2H3zm0-5V6h18v2H3z"/>
+        </svg>
+      </button>
+      <img src="/static/img/pepper_icon.svg" alt="" class="pepper-icon" onerror="this.style.display='none'"/>
+      <div class="header-info">
+        <span class="header-title">Assistant d'accueil</span>
+        <span class="header-sub">Hôpital Central d'Avignon</span>
       </div>
-      <div id="conv-list"></div>
-    </aside>
+    </header>
 
-    <!-- ── Colonne droite : chat ── -->
-    <div id="main-panel">
-      <header>
-        <div class="header-inner">
-          <!-- Bouton pour cacher/montrer la sidebar -->
-          <button id="sidebar-toggle" title="Afficher / masquer les conversations">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
-              <path d="M3 18v-2h18v2H3zm0-5v-2h18v2H3zm0-5V6h18v2H3z"/>
+    <!-- Bouton Plan (position:fixed, indépendant du header) -->
+    <button id="map-btn" title="Voir l'itinéraire guidé">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15">
+        <path d="M12 2C8.1 2 5 5.1 5 9c0 5.3 7 13 7 13s7-7.7 7-13c0-3.9-3.1-7-7-7zm0 9.5c-1.4 0-2.5-1.1-2.5-2.5S10.6 6.5 12 6.5s2.5 1.1 2.5 2.5S13.4 11.5 12 11.5z"/>
+      </svg>
+      Plan
+    </button>
+
+    <!-- Chat + overlays -->
+    <main>
+      <div id="chat-container">
+        <div id="messages"></div>
+      </div>
+
+      <!-- Carte info (horaires, médecins…) -->
+      <div id="info-card">
+        <h2 id="card-title"></h2>
+        <div id="card-body"></div>
+      </div>
+
+      <!-- Panneau carte navigation -->
+      <div id="map-panel">
+        <div id="map-header">
+          <div>
+            <div id="map-service-title"></div>
+            <div id="map-info">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.3 7 13 7 13s7-7.7 7-13c0-3.9-3.1-7-7-7zm0 9.5c-1.4 0-2.5-1.1-2.5-2.5S10.6 6.5 12 6.5s2.5 1.1 2.5 2.5S13.4 11.5 12 11.5z"/></svg>
+              <span id="map-distance"></span>
+              &nbsp;·&nbsp;
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm.5 14.5H11V11h1.5v5.5zm0-7H11V7.5h1.5V9.5z"/></svg>
+              <span id="map-duration"></span>
+            </div>
+          </div>
+          <button id="map-close" title="Fermer la carte">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+              <path d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/>
             </svg>
           </button>
-          <img src="/static/img/pepper_icon.svg" alt="Pepper" class="pepper-icon" onerror="this.style.display='none'" />
-          <div>
-            <h1>Assistant d'accueil</h1>
-            <p class="subtitle">Hôpital Central d'Avignon</p>
+        </div>
+
+        <canvas id="map-canvas"></canvas>
+
+        <div id="map-hint">Appuyez sur un service pour obtenir l'itinéraire guidé</div>
+
+        <button id="map-guide-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M21 3L3 10.5v.6l6.8 2.7 2.7 6.8h.6L21 3z"/></svg>
+          Me guider pas à pas
+        </button>
+
+        <div id="map-steps">
+          <div id="map-step-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M21 3L3 10.5v.6l6.8 2.7 2.7 6.8h.6L21 3z"/></svg>
+          </div>
+          <div id="map-step-text"></div>
+          <div id="map-step-nav">
+            <button id="map-step-prev">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M15.4 16.6L10.8 12l4.6-4.6L14 6l-6 6 6 6z"/></svg>
+            </button>
+            <span id="map-step-counter">1 / 4</span>
+            <button id="map-step-next">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M8.6 16.6L13.2 12 8.6 7.4 10 6l6 6-6 6z"/></svg>
+            </button>
           </div>
         </div>
-      </header>
+      </div>
 
-      <main>
-        <div id="chat-container">
-          <div id="messages"></div>
-        </div>
-        <div id="info-card" class="hidden">
-          <h2 id="card-title"></h2>
-          <div id="card-body"></div>
-        </div>
-      </main>
+    </main>
 
-      <footer>
-        <form id="chat-form" autocomplete="off">
-          <input id="user-input" type="text" placeholder="Posez votre question…" autofocus maxlength="300" />
-          <button type="button" id="mic-btn" title="Parler" aria-label="Activer le micro">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-              <line x1="12" y1="19" x2="12" y2="23"/>
-              <line x1="8" y1="23" x2="16" y2="23"/>
-            </svg>
-          </button>
-          <button type="submit" id="send-btn">Envoyer</button>
-        </form>
-      </footer>
-    </div>
+    <!-- Input -->
+    <footer>
+      <form id="chat-form" autocomplete="off">
+        <button type="button" id="mic-btn" title="Parler" aria-label="Activer le micro">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+        </button>
+        <input id="user-input" type="text" placeholder="Posez votre question…" autofocus maxlength="300"/>
+        <button type="submit" id="send-btn" title="Envoyer">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </form>
+    </footer>
+
   </div>
+</div>
 
-  <script src="/static/js/chat.js"></script>
+<script src="/static/js/hospital_map.js"></script>
+<script src="/static/js/chat.js"></script>
 </body>
 </html>

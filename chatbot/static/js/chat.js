@@ -16,14 +16,36 @@ var convList      = document.getElementById("conv-list");
 var newChatBtn    = document.getElementById("new-chat-btn");
 var sidebarToggle = document.getElementById("sidebar-toggle");
 var sidebar       = document.getElementById("sidebar");
+var mapBtn        = document.getElementById("map-btn");
 
 // ── État ──────────────────────────────────────────────────────────────────────
-var currentConvId = null;
-var isRecording   = false;
+var currentConvId    = null;
+var isRecording      = false;
+var currentMapService = null;
+
+// ── Bouton Plan ───────────────────────────────────────────────────────────────
+mapBtn.setAttribute("style", "display:block");  // toujours visible
+
+mapBtn.addEventListener("click", function () {
+  if (currentMapService) {
+    HospitalMap.showWithGuide(currentMapService);
+  } else {
+    HospitalMap.showAll();
+  }
+});
+
+// Callback TTS : chaque étape affichée est lue par Pepper
+HospitalMap.setStepCallback(function (stepText) {
+  xhr("POST", "/speak/push", { text: stepText }, function () {}, function () {});
+});
 
 // ── Sidebar toggle ────────────────────────────────────────────────────────────
 sidebarToggle.addEventListener("click", function() {
-  sidebar.classList.toggle("collapsed");
+  if (sidebar.className.indexOf("collapsed") === -1) {
+    sidebar.className += " collapsed";
+  } else {
+    sidebar.className = sidebar.className.replace(/\bcollapsed\b/g, "").trim();
+  }
 });
 
 // ── Conversations ─────────────────────────────────────────────────────────────
@@ -44,7 +66,7 @@ function renderConvList(convs) {
     (function(conv) {
       var item = document.createElement("div");
       item.className = "conv-item" + (conv.id === currentConvId ? " active" : "");
-      item.dataset.id = conv.id;
+      item.setAttribute("data-id", conv.id);
 
       var title = document.createElement("span");
       title.className = "conv-title";
@@ -81,7 +103,6 @@ function deleteConversation(convId) {
   xhr("DELETE", "/conversations/" + convId, null, function() {
     if (convId === currentConvId) currentConvId = null;
     loadConversations();
-    if (!currentConvId) createConversation();
   });
 }
 
@@ -97,11 +118,16 @@ function switchConversation(convId) {
         addMessage(msgs[i].content, msgs[i].role === "bot" ? "bot" : "user");
       }
     }
+  }, function() {
+    addWelcome();
   });
   var items = convList.querySelectorAll(".conv-item");
   for (var i = 0; i < items.length; i++) {
-    items[i].classList.toggle("active", items[i].dataset.id === convId);
+    var isActive = (items[i].getAttribute("data-id") === convId);
+    items[i].className = isActive ? "conv-item active" : "conv-item";
   }
+  currentMapService = null;
+  HospitalMap.hide();
   hideCard();
 }
 
@@ -131,7 +157,13 @@ function sendMessage(text, source) {
     input.focus();
     addMessage(data.response || data.error || "Erreur inattendue.", "bot");
     loadConversations();
-    hideCard();
+    if (data.map_service) {
+      currentMapService = data.map_service;
+    } else {
+      currentMapService = null;
+      HospitalMap.hide();
+      hideCard();
+    }
   }, function() {
     typingEl.remove();
     sendBtn.disabled = false;
@@ -151,11 +183,11 @@ form.addEventListener("submit", function(e) {
 function setMicUI(recording) {
   isRecording = recording;
   if (recording) {
-    micBtn.classList.add("recording");
+    if (micBtn.className.indexOf("recording") === -1) micBtn.className += " recording";
     micBtn.title      = "Arrêter l'enregistrement";
     input.placeholder = "Pepper écoute…";
   } else {
-    micBtn.classList.remove("recording");
+    micBtn.className  = micBtn.className.replace(/\brecording\b/g, "").trim();
     micBtn.title      = "Parler";
     input.placeholder = "Posez votre question…";
   }
@@ -199,7 +231,10 @@ setInterval(pollUpdates, 1000);
 
 // ── Helpers DOM ───────────────────────────────────────────────────────────────
 function scrollToBottom() {
-  requestAnimationFrame(function() {
+  var raf = window.requestAnimationFrame
+         || window.webkitRequestAnimationFrame
+         || function(cb) { setTimeout(cb, 16); };
+  raf(function() {
     messages.scrollTop = messages.scrollHeight;
   });
 }
@@ -268,7 +303,7 @@ var SERVICE_PLANS = {
 };
 
 function showCard(intent, rows) {
-  infoCard.className = infoCard.className.replace(/\bhidden\b/g, "").trim();
+  infoCard.setAttribute("style", "display:block");
   cardBody.innerHTML = "";
   var titles = {
     localisation_service:  "Localisation du service",
@@ -323,7 +358,7 @@ function makeRow(label, value) {
 }
 
 function hideCard() {
-  if (infoCard.className.indexOf("hidden") === -1) infoCard.className += " hidden";
+  infoCard.setAttribute("style", "display:none");
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────

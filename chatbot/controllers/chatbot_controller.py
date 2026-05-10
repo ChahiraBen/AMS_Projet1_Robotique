@@ -83,13 +83,34 @@ def transcribe():
 
     text = ""
     try:
+        # Ignorer les enregistrements trop courts (< ~0.5s à 16kHz mono 16-bit)
+        file_size = os.path.getsize(tmp_path)
+        if file_size < 16000:
+            print("[STT] Audio trop court ({} bytes), ignoré".format(file_size))
+            return jsonify({"text": ""})
+
         with open(tmp_path, "rb") as f:
             resp = _whisper.audio.transcriptions.create(
                 model="whisper-1",
                 file=f,
                 language="fr",
+                temperature=0,
+                prompt="Hôpital. Patient demande localisation service, médecin, horaire, rendez-vous.",
+                response_format="verbose_json",
             )
+
+        # Filtre anti-hallucination : no_speech_prob élevé = silence ou bruit
+        segments = getattr(resp, "segments", None) or []
+        if segments:
+            avg_nsp = sum(getattr(s, "no_speech_prob", 0) for s in segments) / len(segments)
+            if avg_nsp > 0.65:
+                print("[STT] Silence/bruit détecté (no_speech_prob={:.2f}), ignoré".format(avg_nsp))
+                return jsonify({"text": ""})
+
         text = (resp.text or "").strip()
+        if len(text) < 3:
+            text = ""
+
         print("[STT]", text)
     except Exception as e:
         print("[STT ERR]", e)
@@ -127,6 +148,15 @@ def mic_status():
 @bp.route("/reset", methods=["POST"])
 def reset():
     session.clear()
+    return jsonify({"status": "ok"})
+
+
+@bp.route("/speak/push", methods=["POST"])
+def speak_push():
+    payload = request.get_json(silent=True) or {}
+    text = (payload.get("text") or "").strip()
+    if text:
+        _push_speak(text)
     return jsonify({"status": "ok"})
 
 

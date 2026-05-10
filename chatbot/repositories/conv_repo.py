@@ -2,6 +2,36 @@ import uuid
 from repositories.db import query_all, query_one, get_connection
 
 
+def recover_orphaned_conversations():
+    """Recrée des entrées Conversations pour les messages dont la conversation a été supprimée."""
+    with get_connection() as conn:
+        orphaned = conn.execute(
+            "SELECT DISTINCT conversation_id FROM Messages "
+            "WHERE conversation_id NOT IN (SELECT id FROM Conversations)"
+        ).fetchall()
+        for row in orphaned:
+            conv_id = row[0]
+            first_msg = conn.execute(
+                "SELECT content FROM Messages WHERE conversation_id = ? AND role = 'user' ORDER BY id LIMIT 1",
+                (conv_id,),
+            ).fetchone()
+            first_time = conn.execute(
+                "SELECT MIN(created_at) FROM Messages WHERE conversation_id = ?",
+                (conv_id,),
+            ).fetchone()[0]
+            if first_msg:
+                titre = first_msg[0][:45] + ("…" if len(first_msg[0]) > 45 else "")
+            else:
+                titre = "Conversation récupérée"
+            conn.execute(
+                "INSERT INTO Conversations (id, titre, created_at) VALUES (?, ?, ?)",
+                (conv_id, titre, first_time),
+            )
+        conn.commit()
+        if orphaned:
+            print("[INIT] {} conversation(s) orpheline(s) récupérée(s)".format(len(orphaned)))
+
+
 class ConversationRepository:
 
     def create(self):
